@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "668877136617",
+    "project_id": "tummy-track-a8b56",
+    "storage_bucket": "tummy-track-a8b56.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:668877136617:android:a068a1097a70a92c1e0678",
+        "android_client_info": {
+          "package_name": "com.example.myapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "668877136617-8sghho91b4se30mpl5b9e3lhqvnc9svo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUMA0h6vAGIvSQQCbYFRkNzxk1T39f3x4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "668877136617-8sghho91b4se30mpl5b9e3lhqvnc9svo.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "668877136617-h2vph0ldhgievl8p33s2glv2l3tgb02q.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.myapp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
