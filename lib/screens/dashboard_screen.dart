@@ -62,6 +62,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Widget _buildIcon(String assetPath, IconData fallbackIcon) {
+    return Image.asset(
+      assetPath,
+      width: 24,
+      height: 24,
+      errorBuilder: (context, error, stackTrace) {
+        return Icon(fallbackIcon, size: 24);
+      },
+    );
+  }
+
   void _navigateTo(int index) {
     String route;
     switch (index) {
@@ -221,49 +232,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF00A3FF),
-          unselectedItemColor: Colors.grey[400],
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
-          items: [
-            BottomNavigationBarItem(
-              icon: Image.asset('assets/images/1home_active_icon.png'),
-              activeIcon: Image.asset('assets/images/1home_active_icon.png'),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              icon: Image.asset('assets/images/tummy_active_icon.png'),
-              activeIcon: Image.asset('assets/images/tummy_active_icon.png'),
-              label: 'Tummy',
-            ),
-            BottomNavigationBarItem(
-              icon: Image.asset('assets/images/history_active_icon.png'),
-              activeIcon: Image.asset('assets/images/history_active_icon.png'),
-              label: 'Riwayat',
-            ),
-            BottomNavigationBarItem(
-              icon: Image.asset('assets/images/profile_active_icon.png'),
-              activeIcon: Image.asset('assets/images/profile_active_icon.png'),
-              label: 'Profil',
-            ),
-          ],
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        selectedItemColor: const Color(0xFF00A3FF),
+        unselectedItemColor: Colors.grey[400],
+        items: [
+          BottomNavigationBarItem(
+            icon: _buildIcon('assets/images/1home_active_icon.png', Icons.home),
+            label: 'Beranda',
+          ),
+          BottomNavigationBarItem(
+            icon: _buildIcon('assets/images/tummy_active_icon.png', Icons.child_care),
+            label: 'Tummy',
+          ),
+          BottomNavigationBarItem(
+            icon: _buildIcon('assets/images/history_active_icon.png', Icons.history),
+            label: 'Riwayat',
+          ),
+          BottomNavigationBarItem(
+            icon: _buildIcon('assets/images/profile_active_icon.png', Icons.person),
+            label: 'Profil',
+          ),
+        ],
       ),
     );
   }

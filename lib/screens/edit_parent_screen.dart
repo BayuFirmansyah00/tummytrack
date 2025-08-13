@@ -26,6 +26,17 @@ class _EditParentScreenState extends State<EditParentScreen> {
     _emailController.text = userModel.email ?? FirebaseAuth.instance.currentUser?.email ?? 'andin123@gmail.com';
   }
 
+  Widget _buildIcon(String assetPath, IconData fallbackIcon) {
+    return Image.asset(
+      assetPath,
+      width: 24,
+      height: 24,
+      errorBuilder: (context, error, stackTrace) {
+        return Icon(fallbackIcon, size: 24);
+      },
+    );
+  }
+
   void _onItemTapped(int index) {
     if (index != _selectedIndex) {
       String route;
@@ -166,27 +177,23 @@ class _EditParentScreenState extends State<EditParentScreen> {
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
-        selectedItemColor: Theme.of(context).colorScheme.secondary,
+        selectedItemColor: const Color(0xFF00A3FF),
         unselectedItemColor: Colors.grey[400],
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+            icon: _buildIcon('assets/images/home_active_icon.png', Icons.home),
             label: 'Beranda',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.baby_changing_station_outlined),
-            activeIcon: Icon(Icons.baby_changing_station),
+            icon: _buildIcon('assets/images/tummy_active_icon.png', Icons.child_care),
             label: 'Tummy',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
+            icon: _buildIcon('assets/images/history_active_icon.png', Icons.history),
             label: 'Riwayat',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
+            icon: _buildIcon('assets/images/1profile_active_icon.png', Icons.person),
             label: 'Profil',
           ),
         ],

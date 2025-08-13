@@ -12,13 +12,29 @@ class BirthDatePage extends StatefulWidget {
 class _BirthDatePageState extends State<BirthDatePage> {
   DateTime? selectedDate;
 
+  void _calculateAge() {
+    if (selectedDate != null) {
+      final now = DateTime.now(); // Menggunakan waktu nyata
+      final difference = now.difference(selectedDate!);
+      final totalDays = difference.inDays;
+      final months = totalDays ~/ 30;
+      final days = totalDays % 30;
+      final ageString = '$months bulan $days hari';
+      final babyModel = Provider.of<BabyModel>(context, listen: false);
+      babyModel.updateAgeRange(ageString);
+      print('Calculated age: $ageString');
+    }
+  }
+
   void _nextScreen() {
     if (selectedDate != null) {
       final babyModel = Provider.of<BabyModel>(context, listen: false);
       babyModel.updateBirthDate(selectedDate!);
-      print('Baby birthdate updated: ${babyModel.birthDate}'); // Logging
+      _calculateAge();
+      print('Baby birthdate updated: ${babyModel.birthDate}');
+      print('Baby age range updated: ${babyModel.ageRange}');
       print('Saving to Firestore: ${babyModel.toJson()}');
-      Navigator.pushReplacementNamed(context, '/age');
+      Navigator.pushReplacementNamed(context, '/relationship');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Masukkan tanggal lahir')));
     }

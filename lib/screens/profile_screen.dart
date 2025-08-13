@@ -18,7 +18,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _fetchParentData();
     _fetchBabyData();
+  }
+
+  void _fetchParentData() async {
+    final userModel = Provider.of<UserModel>(context, listen: false);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        if (userDoc.exists) {
+          final data = userDoc.data()!;
+          userModel.updateName(data['name'] ?? 'Nama Tidak Diketahui');
+          userModel.updateEmail(data['email'] ?? user.email ?? 'Email Tidak Diketahui');
+        } else {
+          // Jika dokumen belum ada, gunakan email dari FirebaseAuth sebagai cadangan
+          userModel.updateEmail(user.email ?? 'Email Tidak Diketahui');
+          userModel.updateName('Nama Tidak Diketahui');
+        }
+      } catch (e) {
+        print('Error fetching parent data: $e');
+        userModel.updateEmail(user.email ?? 'Email Tidak Diketahui');
+        userModel.updateName('Nama Tidak Diketahui');
+      }
+    }
   }
 
   void _fetchBabyData() async {
@@ -30,7 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             .collection('users')
             .doc(user.uid)
             .collection('babies')
-            .limit(1) // Ambil bayi pertama sebagai default (bayi 1)
+            .limit(1)
             .get();
         if (babySnapshot.docs.isNotEmpty) {
           final babyDoc = babySnapshot.docs.first.data();
@@ -90,25 +117,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.black),
-                    onPressed: () => Navigator.of(context).pushReplacementNamed('/dashboard'),
-                  ),
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        'Profil',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              const Text(
+                'Profil',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF333333),
+                ),
               ),
               const SizedBox(height: 20),
               CircleAvatar(

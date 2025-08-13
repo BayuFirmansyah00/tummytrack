@@ -11,7 +11,6 @@ import 'screens/forgot_password_screen.dart';
 import 'screens/welcome_page.dart';
 import 'screens/baby_name_input_screen.dart';
 import 'screens/baby_birthdate_input_screen.dart';
-import 'screens/baby_age_input_screen.dart';
 import 'screens/relationship_page.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/tummytime_screen.dart';
@@ -36,7 +35,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => BabyModel()),
-        ChangeNotifierProvider(create: (_) => UserModel(), child: MyApp()),
+        ChangeNotifierProvider(create: (_) => UserModel()),
         Provider(create: (_) => FirestoreService()),
         Provider(create: (_) => AuthService()),
       ],
@@ -58,7 +57,6 @@ class MyApp extends StatelessWidget {
           '/welcome': (context) => WelcomePage(),
           '/baby-name': (context) => BabyNameInputScreen(),
           '/birthdate': (context) => BirthDatePage(),
-          '/age': (context) => BabyAgeInputScreen(),
           '/relationship': (context) => RelationshipPage(),
           '/dashboard': (context) => DashboardScreen(),
           '/tummy': (context) => TummyTimeScreen(),

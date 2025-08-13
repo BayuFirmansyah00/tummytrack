@@ -30,17 +30,130 @@ class _EditBabyScreenState extends State<EditBabyScreen> {
         ? "${_selectedBirthDate!.day}/${_selectedBirthDate!.month}/${_selectedBirthDate!.year}"
         : '09/08/2025';
     
-    // Pastikan gender yang dipilih ada dalam list
     final genderOptions = ['Laki-Laki', 'Perempuan'];
     String? currentGender = babyModel.gender ?? 'Laki-Laki';
     _selectedGender = genderOptions.contains(currentGender) ? currentGender : 'Laki-Laki';
     
-    // Pastikan relationship yang dipilih ada dalam list
     final relationshipOptions = ['Ibu', 'Ayah', 'Wali'];
     String? currentRelationship = babyModel.relationship ?? 'Ibu';
     _selectedRelationship = relationshipOptions.contains(currentRelationship) ? currentRelationship : 'Ibu';
     
     _calculateAge();
+  }
+
+  Widget _buildIcon(String assetPath, IconData fallbackIcon) {
+    return Image.asset(
+      assetPath,
+      width: 24,
+      height: 24,
+      errorBuilder: (context, error, stackTrace) {
+        return Icon(fallbackIcon, size: 24);
+      },
+    );
+  }
+
+  void _calculateAge() {
+    if (_selectedBirthDate != null) {
+      final now = DateTime.now();
+      final difference = now.difference(_selectedBirthDate!);
+      final totalDays = difference.inDays;
+      final months = totalDays ~/ 30;
+      final days = totalDays % 30;
+      final ageString = '$months bulan $days hari';
+      setState(() {
+        _ageController.text = ageString;
+      });
+    }
+  }
+
+  void _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedBirthDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null && picked != _selectedBirthDate) {
+      setState(() {
+        _selectedBirthDate = picked;
+        _birthDateController.text = "${picked.day}/${picked.month}/${picked.year}";
+        _calculateAge();
+      });
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    if (_nameController.text.isEmpty || 
+        _selectedBirthDate == null || 
+        _selectedGender == null || 
+        _selectedRelationship == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Semua field harus diisi!')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final babyModel = Provider.of<BabyModel>(context, listen: false);
+      babyModel.updateName(_nameController.text);
+      babyModel.updateBirthDate(_selectedBirthDate!);
+      babyModel.updateGender(_selectedGender!);
+      babyModel.updateAgeRange(_ageController.text);
+      babyModel.updateRelationship(_selectedRelationship!);
+
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final babySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('babies')
+            .limit(1)
+            .get();
+        if (babySnapshot.docs.isNotEmpty) {
+          final babyDoc = babySnapshot.docs.first.reference;
+          await babyDoc.update({
+            'name': _nameController.text,
+            'birth_date': _selectedBirthDate!.toIso8601String(),
+            'gender': _selectedGender,
+            'age_range': _ageController.text,
+            'relationship': _selectedRelationship,
+            'updated_at': FieldValue.serverTimestamp(),
+          });
+        } else {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('babies')
+              .add({
+            'name': _nameController.text,
+            'birth_date': _selectedBirthDate!.toIso8601String(),
+            'gender': _selectedGender,
+            'age_range': _ageController.text,
+            'relationship': _selectedRelationship,
+            'created_at': FieldValue.serverTimestamp(),
+            'updated_at': FieldValue.serverTimestamp(),
+          });
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Data bayi berhasil disimpan!')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      print('Error saving baby data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Terjadi kesalahan saat menyimpan data!')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _onItemTapped(int index) {
@@ -63,97 +176,6 @@ class _EditBabyScreenState extends State<EditBabyScreen> {
     }
   }
 
-  Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedBirthDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null && picked != _selectedBirthDate) {
-      setState(() {
-        _selectedBirthDate = picked;
-        _birthDateController.text = "${picked.day}/${picked.month}/${picked.year}";
-        _calculateAge();
-      });
-    }
-  }
-
-  void _calculateAge() {
-    if (_selectedBirthDate != null) {
-      final now = DateTime.now();
-      final difference = now.difference(_selectedBirthDate!);
-      final totalDays = difference.inDays;
-      final months = totalDays ~/ 30;
-      final days = totalDays % 30;
-      _ageController.text = '$months bulan $days hari';
-      setState(() {});
-    }
-  }
-
-  Future<void> _saveChanges() async {
-    if (_nameController.text.isEmpty || 
-        _selectedBirthDate == null || 
-        _selectedGender == null || 
-        _selectedRelationship == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Semua field harus diisi!')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final babyModel = Provider.of<BabyModel>(context, listen: false);
-      final user = FirebaseAuth.instance.currentUser;
-
-      // Update local model
-      babyModel.updateName(_nameController.text);
-      babyModel.updateBirthDate(_selectedBirthDate!);
-      babyModel.updateGender(_selectedGender!);
-      babyModel.updateAgeRange(_ageController.text);
-      babyModel.updateRelationship(_selectedRelationship!);
-
-      // Save to Firebase
-      if (user != null) {
-        final babySnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('babies')
-            .limit(1)
-            .get();
-
-        if (babySnapshot.docs.isNotEmpty) {
-          await babySnapshot.docs.first.reference.update({
-            'name': _nameController.text,
-            'birth_date': _selectedBirthDate!.toIso8601String(),
-            'gender': _selectedGender!,
-            'age_range': _ageController.text,
-            'relationship': _selectedRelationship!,
-            'updated_at': FieldValue.serverTimestamp(),
-          });
-        }
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data bayi berhasil disimpan!')),
-      );
-      Navigator.pop(context);
-    } catch (e) {
-      print('Error saving baby data: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Terjadi kesalahan saat menyimpan data!')),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,7 +188,7 @@ class _EditBabyScreenState extends State<EditBabyScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Edit Baby',
+          'Edit Profil Bayi',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -180,15 +202,8 @@ class _EditBabyScreenState extends State<EditBabyScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 12),
-              const CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.grey,
-                child: Icon(Icons.camera_alt, color: Colors.white),
-              ),
-              const SizedBox(height: 24),
               buildTextField('Nama', _nameController),
               const SizedBox(height: 12),
               GestureDetector(
@@ -244,35 +259,45 @@ class _EditBabyScreenState extends State<EditBabyScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: Theme.of(context).colorScheme.secondary,
-        unselectedItemColor: Colors.grey[400],
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.baby_changing_station_outlined),
-            activeIcon: Icon(Icons.baby_changing_station),
-            label: 'Tummy',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'Riwayat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profil',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: const Color(0xFF00A3FF),
+          unselectedItemColor: Colors.grey[400],
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          items: [
+            BottomNavigationBarItem(
+              icon: _buildIcon('assets/images/home_active_icon.png', Icons.home),
+              label: 'Beranda',
+            ),
+            BottomNavigationBarItem(
+              icon: _buildIcon('assets/images/tummy_active_icon.png', Icons.child_care),
+              label: 'Tummy',
+            ),
+            BottomNavigationBarItem(
+              icon: _buildIcon('assets/images/history_active_icon.png', Icons.history),
+              label: 'Riwayat',
+            ),
+            BottomNavigationBarItem(
+              icon: _buildIcon('assets/images/1profile_active_icon.png', Icons.person),
+              label: 'Profil',
+            ),
+          ],
+        ),
       ),
     );
   }
