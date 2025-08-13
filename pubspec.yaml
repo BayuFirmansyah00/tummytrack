@@ -74,19 +74,26 @@ flutter:
   assets:
     - assets/images/logo.jpg
     - assets/images/logo.png
-    - assets/images/bayitummy.png
-    - assets/images/baby2.png
-    - assets/images/matras.png
     - assets/images/google.png
-    - assets/images/frame_ungu.png
-    - assets/images/frame_biru.png
-    - assets/images/frame_pink.png
-    - assets/images/frame_kuning.png
-    - assets/images/frame_hijau.png
-    - assets/images/Normal.png
-    - assets/images/Menangis.png
-    - assets/images/Senang.png
+    - assets/images/normal.png
+    - assets/images/menangis.png
+    - assets/images/senang.png
     - assets/images/Bayitidur.png
+    - assets/images/card beranda 1.png
+    - assets/images/card beranda 2.png
+    - assets/images/card beranda 3.png
+    - assets/images/card beranda 4.png
+    - assets/images/card beranda 5.png
+    - assets/images/home_active_icon.png
+    - assets/images/tummy_active_icon.png
+    - assets/images/history_active_icon.png
+    - assets/images/profile_active_icon.png
+    - assets/images/notification_icon.png
+    - assets/images/1home_active_icon.png
+    - assets/images/1tummy_active_icon.png
+    - assets/images/1history_active_icon.png
+    - assets/images/1profile_active_icon.png
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

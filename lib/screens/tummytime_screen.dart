@@ -35,7 +35,7 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
     _rotationController = AnimationController(
       duration: const Duration(seconds: 3),
       vsync: this,
-    );
+    )..repeat();
     _progressController = AnimationController(
       duration: Duration(seconds: _maxDurationSeconds),
       vsync: this,
@@ -110,8 +110,7 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
   void _startTimer() {
     if (!_isRunning) {
       _isRunning = true;
-      _rotationController.repeat();
-      _progressController.forward();
+      _progressController.forward(from: 0.0);
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         setState(() {
           if (_remainingSeconds > 0) {
@@ -132,7 +131,6 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
     if (_isRunning) {
       _isRunning = false;
       _timer?.cancel();
-      _rotationController.stop();
       _progressController.stop();
     }
   }
@@ -144,7 +142,6 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
     setState(() {
       _isRunning = false;
     });
-    _rotationController.reset();
     _progressController.reset();
   }
 
@@ -212,6 +209,17 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
     _navigateTo(index);
   }
 
+  Widget _buildIcon(String assetPath, IconData fallbackIcon) {
+    return Image.asset(
+      assetPath,
+      width: 24,
+      height: 24,
+      errorBuilder: (context, error, stackTrace) {
+        return Icon(fallbackIcon, size: 24);
+      },
+    );
+  }
+
   void _navigateTo(int index) {
     String route;
     switch (index) {
@@ -249,92 +257,69 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              const Text(
-                'Tummy Time',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF333333),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => _navigateTo(0),
+                  ),
+                  const Text(
+                    'Tummy Time',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF333333),
+                    ),
+                  ),
+                  const SizedBox(width: 48), // Placeholder for symmetry
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: 300,
+                height: 300,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CustomPaint(
+                      size: const Size(300, 300),
+                      painter: ProgressPainter(_progressController.value, _isRunning),
+                    ),
+                    Positioned(
+                      top: 120,
+                      child: Text(
+                        _formattedTime,
+                        style: const TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 60,
+                      child: ElevatedButton(
+                        onPressed: _isRunning ? _pauseTimer : _startTimer,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isRunning ? Colors.red : const Color(0xFF4CAF50),
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          _isRunning ? 'Jeda' : 'Mulai',
+                          style: const TextStyle(fontSize: 18, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 20),
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 200,
-                    height: 200,
-                    child: CircularProgressIndicator(
-                      value: _progressController.value,
-                      strokeWidth: 12,
-                      backgroundColor: Colors.grey[300],
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF7DD3D8)),
-                    ),
-                  ),
-                  AnimatedBuilder(
-                    animation: _rotationController,
-                    builder: (context, child) {
-                      return Transform.rotate(
-                        angle: _rotationController.value * 2 * math.pi,
-                        child: Image.asset(
-                          'assets/images/tummy_baby.png',
-                          width: 150,
-                          height: 150,
-                        ),
-                      );
-                    },
-                  ),
-                  Positioned(
-                    top: 70,
-                    child: Text(
-                      _formattedTime,
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF333333),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: _isRunning ? _pauseTimer : _startTimer,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _isRunning ? Colors.red : const Color(0xFF7DD3D8),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      _isRunning ? 'Jeda' : 'Mulai',
-                      style: const TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: _resetTimer,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[400],
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Ulangi',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
               const Text(
-                'Pilih Mood Bayi',
+                'Mood baby',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -343,22 +328,52 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
               ),
               const SizedBox(height: 10),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: ['Normal', 'Senang', 'Menangis'].map((mood) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedMood = mood;
-                        });
-                      },
-                      child: Image.asset(
-                        'assets/images/$mood.png',
-                        width: 60,
-                        height: 60,
-                        color: _selectedMood == mood ? null : Colors.grey[400],
-                      ),
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: ['Normal', 'Menangis', 'Senang'].map((mood) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedMood = mood;
+                      });
+                    },
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF79BCC1),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: _selectedMood == mood ? const Color(0xFF7DD3D8) : Colors.transparent,
+                              width: 3,
+                            ),
+                          ),
+                          child: Center(
+                            child: Image.asset(
+                              'assets/images/${mood.toLowerCase()}.png',
+                              width: 55,
+                              height: 55,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.face,
+                                  size: 55,
+                                  color: Colors.white,
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          mood,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _selectedMood == mood ? const Color(0xFF7DD3D8) : Colors.grey[600],
+                            fontWeight: _selectedMood == mood ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }).toList(),
@@ -368,36 +383,89 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: const Color(0xFF7DD3D8),
-        unselectedItemColor: Colors.grey[400],
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.baby_changing_station_outlined),
-            activeIcon: Icon(Icons.baby_changing_station),
-            label: 'Tummy',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'Riwayat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profil',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: const Color(0xFF7DD3D8),
+          unselectedItemColor: Colors.grey[400],
+          items: [
+            BottomNavigationBarItem(
+              icon: _buildIcon('assets/images/home_active_icon.png', Icons.home),
+              label: 'Beranda',
+            ),
+            BottomNavigationBarItem(
+              icon: _buildIcon('assets/images/1tummy_active_icon.png', Icons.child_care),
+              label: 'Tummy',
+            ),
+            BottomNavigationBarItem(
+              icon: _buildIcon('assets/images/history_active_icon.png', Icons.history),
+              label: 'Riwayat',
+            ),
+            BottomNavigationBarItem(
+              icon: _buildIcon('assets/images/profile_active_icon.png', Icons.person),
+              label: 'Profil',
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class ProgressPainter extends CustomPainter {
+  final double progress;
+  final bool isRunning;
+
+  ProgressPainter(this.progress, this.isRunning);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 10;
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12
+      ..strokeCap = StrokeCap.round;
+
+    // Background circle
+    paint.color = Colors.grey[300]!;
+    canvas.drawCircle(center, radius, paint);
+
+    // Progress arc with gradient
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    paint.shader = const SweepGradient(
+      colors: [Color(0xFF7DD3D8), Color(0xFF4CAF50), Color(0xFFFFA726)],
+      startAngle: 0.0,
+      endAngle: 2 * math.pi,
+    ).createShader(rect);
+    canvas.drawArc(
+      rect,
+      -math.pi / 2,
+      2 * math.pi * progress,
+      false,
+      paint,
+    );
+
+    // Add subtle rotation effect
+    if (isRunning) {
+      paint.color = Colors.white.withOpacity(0.3);
+      canvas.drawCircle(center, radius - 5, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

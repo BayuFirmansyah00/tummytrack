@@ -46,6 +46,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Widget _buildIcon(String assetPath, IconData fallbackIcon) {
+    return Image.asset(
+      assetPath,
+      width: 24,
+      height: 24,
+      errorBuilder: (context, error, stackTrace) {
+        return Icon(fallbackIcon, size: 24);
+      },
+    );
+  }
+
   void _onItemTapped(int index) {
     if (index != _selectedIndex) {
       String route;
@@ -72,44 +83,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final userModel = Provider.of<UserModel>(context);
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: Colors.grey[100],
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pushReplacementNamed('/dashboard'),
-        ),
-        title: const Text(
-          'Profil',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        centerTitle: true,
-        actions: [],
-      ),
+      backgroundColor: Colors.grey[50],
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 12),
-              const CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.grey,
-                child: Icon(Icons.camera_alt, color: Colors.white),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.black),
+                    onPressed: () => Navigator.of(context).pushReplacementNamed('/dashboard'),
+                  ),
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'Profil',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+              CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.grey.shade300,
+                child: Icon(Icons.camera_alt, color: Colors.grey.shade600, size: 40),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                userModel.name ?? 'Andin',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                userModel.email ?? 'andiny123@gmail.com',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 20),
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black12),
-                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,10 +153,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         const Text(
                           'Informasi Orang tua',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.teal),
+                          icon: const Icon(Icons.edit, color: Color(0xFF00A3FF)),
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -132,42 +169,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
-                        const Icon(Icons.person, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        const Text('Nama'),
+                        const Icon(Icons.person_outline, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Nama'),
+                              Text(userModel.name ?? 'Andin'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                    Text(userModel.name ?? 'Bayu'),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
-                        const Icon(Icons.phone, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        const Text('No. HP'),
+                        const Icon(Icons.phone_outlined, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Telepon'),
+                              Text(userModel.phone ?? '0812-3456-789'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                    Text(userModel.phone ?? '087654321098'),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
-                        const Icon(Icons.email, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        const Text('Email'),
+                        const Icon(Icons.email_outlined, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Email'),
+                              Text(userModel.email ?? 'andiny123@gmail.com'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                    Text(userModel.email ?? 'bayu@gmail.com'),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               Container(
-                width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black12),
-                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,11 +241,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Informasi Bayi',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          'Informasi Baby',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.teal),
+                          icon: const Icon(Icons.edit, color: Color(0xFF00A3FF)),
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -190,57 +258,93 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
-                        const Icon(Icons.person, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        const Text('Nama Bayi'),
+                        const Icon(Icons.person_outline, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Nama Baby'),
+                              Text(babyModel.name ?? 'John'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                    Text(babyModel.name ?? 'John'),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
-                        const Icon(Icons.calendar_today, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        const Text('Tanggal Lahir'),
+                        const Icon(Icons.calendar_today_outlined, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Tanggal Lahir'),
+                              Text(babyModel.birthDate?.toString().split(' ')[0] ?? '22 Juli 2025'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                    Text(babyModel.birthDate?.toString().split(' ')[0] ?? '22 Juli 2025'),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
-                        const Icon(Icons.wc, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        const Text('Jenis Kelamin'),
+                        const Icon(Icons.transgender, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Jenis Kelamin'),
+                              Text(babyModel.gender ?? 'Laki-Laki'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                    Text(babyModel.gender ?? 'Laki-Laki'),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
-                        const Icon(Icons.calendar_month, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        const Text('Usia'),
+                        const Icon(Icons.timeline, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Usia'),
+                              Text(babyModel.ageRange ?? '2 Minggu'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                    Text(babyModel.ageRange ?? '2 Minggu'),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
-                        const Icon(Icons.family_restroom, color: Colors.grey),
-                        const SizedBox(width: 8),
-                        const Text('Hubungan'),
+                        const Icon(Icons.family_restroom_outlined, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Hubungan'),
+                              Text(babyModel.relationship ?? 'Ibu'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                    Text(babyModel.relationship ?? 'Ibu'),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton.icon(
+                child: ElevatedButton.icon(
                   onPressed: () {
                     FirebaseAuth.instance.signOut().then((_) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -249,14 +353,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.pushReplacementNamed(context, '/login');
                     });
                   },
-                  icon: const Icon(Icons.logout, color: Colors.red),
-                  label: const Text(
-                    'Keluar',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.red),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  icon: const Icon(Icons.logout, color: Colors.white),
+                  label: const Text('Keluar', style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00A3FF),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -264,35 +368,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: Theme.of(context).colorScheme.secondary,
-        unselectedItemColor: Colors.grey[400],
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.baby_changing_station_outlined),
-            activeIcon: Icon(Icons.baby_changing_station),
-            label: 'Tummy',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'Riwayat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profil',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: const Color(0xFF00A3FF),
+          unselectedItemColor: Colors.grey[400],
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          items: [
+            BottomNavigationBarItem(
+              icon: _buildIcon('assets/images/home_active_icon.png', Icons.home),
+              label: 'Beranda',
+            ),
+            BottomNavigationBarItem(
+              icon: _buildIcon('assets/images/tummy_active_icon.png', Icons.child_care),
+              label: 'Tummy',
+            ),
+            BottomNavigationBarItem(
+              icon: _buildIcon('assets/images/history_active_icon.png', Icons.history),
+              label: 'Riwayat',
+            ),
+            BottomNavigationBarItem(
+              icon: _buildIcon('assets/images/1profile_active_icon.png', Icons.person),
+              label: 'Profil',
+            ),
+          ],
+        ),
       ),
     );
   }

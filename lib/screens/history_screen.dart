@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart'; // Add this for Indonesian locale
 
 class HistoryScreen extends StatefulWidget {
   @override
@@ -15,6 +16,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void initState() {
     super.initState();
+    initializeDateFormatting('id_ID', null); // Initialize Indonesian locale
   }
 
   Stream<QuerySnapshot> _getBabySessionsStream() {
@@ -159,55 +161,86 @@ class _HistoryScreenState extends State<HistoryScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Riwayat Tummy Time',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF333333),
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.black),
+                    onPressed: () => _navigateTo(0),
                   ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today, color: Color(0xFF7DD3D8)),
-                        onPressed: _selectDate,
-                      ),
-                      if (_selectedDate != null)
-                        IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.red),
-                          onPressed: _clearDateFilter,
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'Riwayat',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
                         ),
-                    ],
+                      ),
+                    ),
                   ),
                 ],
               ),
-              if (_selectedDate != null)
-                Container(
-                  padding: const EdgeInsets.all(12),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: _selectDate,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF7DD3D8).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
-                    children: [
-                      const Icon(Icons.filter_list, color: Color(0xFF7DD3D8)),
-                      const SizedBox(width: 8),
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
                       Text(
-                        'Filter: ${DateFormat('dd/MM/yyyy').format(_selectedDate!)}',
-                        style: const TextStyle(
-                          color: Color(0xFF7DD3D8),
-                          fontWeight: FontWeight.w500,
-                        ),
+                        'Pilih tanggal dan bulan',
+                        style: TextStyle(color: Colors.grey),
                       ),
+                      SizedBox(width: 8),
+                      Icon(Icons.calendar_today, color: Colors.grey),
                     ],
                   ),
                 ),
+              ),
+              if (_selectedDate != null) ...[
+                const SizedBox(height: 10),
+                GestureDetector(
+                  onTap: _clearDateFilter,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF7DD3D8).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.filter_list, color: Color(0xFF7DD3D8)),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Filter: ${DateFormat('dd MMMM yyyy', 'id').format(_selectedDate!)}',
+                          style: const TextStyle(
+                            color: Color(0xFF7DD3D8),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
+              const Text(
+                'Sesi Tummy Time',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF333333),
+                ),
+              ),
+              const SizedBox(height: 10),
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
                   stream: _getBabySessionsStream(),
@@ -237,6 +270,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       itemCount: filteredSessions.length,
                       itemBuilder: (context, index) {
                         final session = filteredSessions[index];
+                        final formattedDate = DateFormat('dd MMMM yyyy, h.mm a', 'id').format(DateTime.parse(session['date']));
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 8),
                           shape: RoundedRectangleBorder(
@@ -244,24 +278,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                           child: ListTile(
                             contentPadding: const EdgeInsets.all(16),
-                            leading: const Icon(Icons.timer, color: Color(0xFF7DD3D8)),
-                            title: Text(
-                              DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(session['date'])),
-                              style: const TextStyle(
+                            leading: Image.asset(
+                              'assets/images/1tummy_active_icon.png', // Assume this asset
+                              width: 40,
+                              height: 40,
+                            ),
+                            title: const Text(
+                              'Tummy Track',
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: Color(0xFF333333),
                               ),
                             ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Durasi: ${session['duration']}'),
-                                Text('Mood: ${session['mood']}'),
-                              ],
+                            subtitle: Text(formattedDate),
+                            trailing: ElevatedButton(
+                              onPressed: () => _showSessionDetails(session),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFE0F7FA),
+                                foregroundColor: const Color(0xFF7DD3D8),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text('Detail'),
                             ),
-                            trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-                            onTap: () => _showSessionDetails(session),
                           ),
                         );
                       },
@@ -273,35 +314,47 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        selectedItemColor: Theme.of(context).colorScheme.secondary,
-        unselectedItemColor: Colors.grey[400],
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.baby_changing_station_outlined),
-            activeIcon: Icon(Icons.baby_changing_station),
-            label: 'Tummy',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'Riwayat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profil',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: const Color(0xFF7DD3D8),
+          unselectedItemColor: Colors.grey[400],
+          items: [
+            BottomNavigationBarItem(
+              icon: Image.asset('assets/images/home_active_icon.png'),
+              activeIcon: Image.asset('assets/images/home_active_icon.png'),
+              label: 'Beranda',
+            ),
+            BottomNavigationBarItem(
+              icon: Image.asset('assets/images/tummy_active_icon.png'),
+              activeIcon: Image.asset('assets/images/tummy_active_icon.png'),
+              label: 'Tummy',
+            ),
+            BottomNavigationBarItem(
+              icon: Image.asset('assets/images/1history_active_icon.png'),
+              activeIcon: Image.asset('assets/images/1history_active_icon.png'),
+              label: 'Riwayat',
+            ),
+            BottomNavigationBarItem(
+              icon: Image.asset('assets/images/profile_active_icon.png'),
+              activeIcon: Image.asset('assets/images/profile_active_icon.png'),
+              label: 'Profil',
+            ),
+          ],
+        ),
       ),
     );
   }

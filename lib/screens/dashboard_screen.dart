@@ -16,7 +16,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final CarouselController _carouselController = CarouselController();
+
   String? _babyName;
 
   @override
@@ -103,21 +103,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Colors.grey[300],
-                      child: Icon(Icons.person, color: Colors.grey[600]),
+                    Image.asset(
+                      'assets/images/profile_active_icon.png',
+                      width: 40,
+                      height: 40,
                     ),
-                    Icon(Icons.notifications_outlined, size: 24, color: Colors.black),
+                    Image.asset(
+                      'assets/images/notification_icon.png',
+                      width: 24,
+                      height: 24,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
                 Text(
                   'Hai, ${_babyName ?? babyModel.name ?? 'Baby John'}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF333333),
                   ),
+                ),
+                const Text(
+                  'Selamat Datang di aplikasi Tummy Track',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF666666),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                CarouselSlider(
+                  options: CarouselOptions(
+                    height: 200,
+                    enlargeCenterPage: true,
+                    autoPlay: false,
+                    enableInfiniteScroll: false,
+                    viewportFraction: 0.9,
+                  ),
+                  items: [
+                    Image.asset('assets/images/card beranda 1.png'),
+                    Image.asset('assets/images/card beranda 2.png'),
+                    Image.asset('assets/images/card beranda 3.png'),
+                    Image.asset('assets/images/card beranda 4.png'),
+                    Image.asset('assets/images/card beranda 5.png'),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 Container(
@@ -134,33 +164,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
-                  child: LineChart(
-                    LineChartData(
-                      gridData: FlGridData(show: false),
-                      titlesData: FlTitlesData(show: false),
-                      borderData: FlBorderData(show: false),
-                      minX: 0,
-                      maxX: 6,
-                      minY: 0,
-                      maxY: 10,
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: [
-                            FlSpot(0, 4),
-                            FlSpot(1, 2),
-                            FlSpot(2, 6),
-                            FlSpot(3, 5),
-                            FlSpot(4, 7),
-                            FlSpot(5, 3),
-                            FlSpot(6, 4),
-                          ],
-                          isCurved: true,
-                          color: Theme.of(context).colorScheme.secondary,
-                          barWidth: 2,
-                          dotData: FlDotData(show: false),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Tummy Time Track',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
-                      ],
-                    ),
+                      ),
+                      const Text(
+                        'Juli 2025',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: LineChart(
+                          LineChartData(
+                            gridData: FlGridData(show: false),
+                            titlesData: FlTitlesData(show: false),
+                            borderData: FlBorderData(show: false),
+                            minX: 0,
+                            maxX: 6,
+                            minY: 0,
+                            maxY: 10,
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: [
+                                  FlSpot(0, 4),
+                                  FlSpot(1, 2),
+                                  FlSpot(2, 6),
+                                  FlSpot(3, 5),
+                                  FlSpot(4, 7),
+                                  FlSpot(5, 3),
+                                  FlSpot(6, 4),
+                                ],
+                                isCurved: true,
+                                color: const Color(0xFF00A3FF),
+                                barWidth: 2,
+                                dotData: FlDotData(show: false),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 100),
@@ -185,29 +237,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
           onTap: _onItemTapped,
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
-          selectedItemColor: Theme.of(context).colorScheme.secondary,
+          selectedItemColor: const Color(0xFF00A3FF),
           unselectedItemColor: Colors.grey[400],
           selectedFontSize: 12,
           unselectedFontSize: 12,
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
+              icon: Image.asset('assets/images/1home_active_icon.png'),
+              activeIcon: Image.asset('assets/images/1home_active_icon.png'),
               label: 'Beranda',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.baby_changing_station_outlined),
-              activeIcon: Icon(Icons.baby_changing_station),
+              icon: Image.asset('assets/images/tummy_active_icon.png'),
+              activeIcon: Image.asset('assets/images/tummy_active_icon.png'),
               label: 'Tummy',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.history_outlined),
-              activeIcon: Icon(Icons.history),
+              icon: Image.asset('assets/images/history_active_icon.png'),
+              activeIcon: Image.asset('assets/images/history_active_icon.png'),
               label: 'Riwayat',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
+              icon: Image.asset('assets/images/profile_active_icon.png'),
+              activeIcon: Image.asset('assets/images/profile_active_icon.png'),
               label: 'Profil',
             ),
           ],
