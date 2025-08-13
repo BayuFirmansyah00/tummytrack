@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../models/baby_model.dart';
+import 'dart:async';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -16,8 +17,8 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
   String? _babyName;
+  int _currentCarouselIndex = 0;
 
   @override
   void initState() {
@@ -33,7 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             .collection('users')
             .doc(user.uid)
             .collection('babies')
-            .limit(1) // Ambil bayi pertama sebagai default (bayi 1)
+            .limit(1)
             .get();
         if (babySnapshot.docs.isNotEmpty) {
           final babyDoc = babySnapshot.docs.first.data();
@@ -43,10 +44,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           });
           babyModel.updateName(babyDoc['name']);
           babyModel.updateGender(babyDoc['gender']);
-          babyModel.updateBirthDate(DateTime.parse(babyDoc['birth_date'] ?? DateTime.now().toIso8601String()));
+          babyModel.updateBirthDate((babyDoc['birth_date'] is Timestamp)
+              ? (babyDoc['birth_date'] as Timestamp).toDate()
+              : DateTime.tryParse(babyDoc['birth_date'] ?? '') ?? DateTime.now());
           babyModel.updateAgeRange(babyDoc['age_range']);
           babyModel.updateRelationship(babyDoc['relationship']);
         }
+      } else {
+        setState(() {
+          _babyName = 'Guest';
+        });
       }
     } catch (e) {
       print('Error fetching baby data: $e');
@@ -114,15 +121,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Image.asset(
-                      'assets/images/profile_active_icon.png',
-                      width: 40,
-                      height: 40,
+                    IconButton(
+                      icon: const Icon(
+                        Icons.person,
+                        size: 40,
+                        color: Color(0xFF00A3FF),
+                      ),
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/profile').then((value) {
+                          print('Returned from /profile');
+                        }).catchError((error) {
+                          print('Navigation error to /profile: $error');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Gagal navigasi ke profil: $error')),
+                          );
+                        });
+                      },
                     ),
-                    Image.asset(
-                      'assets/images/notification_icon.png',
-                      width: 24,
-                      height: 24,
+                    IconButton(
+                      icon: const Icon(
+                        Icons.notifications,
+                        size: 24,
+                        color: Color(0xFF00A3FF),
+                      ),
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/notification').then((value) {
+                          print('Returned from /notification');
+                        }).catchError((error) {
+                          print('Navigation error to /notification: $error');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Gagal navigasi ke notifikasi: $error')),
+                          );
+                        });
+                      },
                     ),
                   ],
                 ),
@@ -144,20 +175,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                CarouselSlider(
-                  options: CarouselOptions(
-                    height: 200,
-                    enlargeCenterPage: true,
-                    autoPlay: false,
-                    enableInfiniteScroll: false,
-                    viewportFraction: 0.9,
-                  ),
-                  items: [
-                    Image.asset('assets/images/card beranda 1.png'),
-                    Image.asset('assets/images/card beranda 2.png'),
-                    Image.asset('assets/images/card beranda 3.png'),
-                    Image.asset('assets/images/card beranda 4.png'),
-                    Image.asset('assets/images/card beranda 5.png'),
+                Column(
+                  children: [
+                    CarouselSlider(
+                      options: CarouselOptions(
+                        height: 200,
+                        enlargeCenterPage: true,
+                        autoPlay: false,
+                        enableInfiniteScroll: false,
+                        viewportFraction: 0.9,
+                        onPageChanged: (index, reason) {
+                          setState(() {
+                            _currentCarouselIndex = index;
+                          });
+                        },
+                      ),
+                      items: [
+                        Image.asset('assets/images/card beranda 1.png'),
+                        Image.asset('assets/images/card beranda 2.png'),
+                        Image.asset('assets/images/card beranda 3.png'),
+                        Image.asset('assets/images/card beranda 4.png'),
+                        Image.asset('assets/images/card beranda 5.png'),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (index) {
+                        return Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _currentCarouselIndex == index
+                                ? const Color(0xFF00A3FF)
+                                : Colors.grey[400],
+                          ),
+                        );
+                      }),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -176,48 +233,106 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Text(
                         'Tummy Time Track',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
+                          color: Color(0xFF333333),
                         ),
                       ),
-                      const Text(
-                        'Juli 2025',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                      const SizedBox(height: 8),
+                      StreamBuilder<DateTime>(
+                        stream: Stream.periodic(const Duration(seconds: 1), (i) => DateTime.now()),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) return const Text('Loading...');
+                          final now = snapshot.data!;
+                          return Text(
+                            '${now.day}-${now.month}-${now.year}, ${now.hour}:${now.minute.toString().padLeft(2, '0')} WIB',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
+                          );
+                        },
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 20),
                       Expanded(
                         child: LineChart(
                           LineChartData(
-                            gridData: FlGridData(show: false),
-                            titlesData: FlTitlesData(show: false),
-                            borderData: FlBorderData(show: false),
+                            gridData: FlGridData(
+                              show: true,
+                              drawVerticalLine: true,
+                              getDrawingHorizontalLine: (value) {
+                                return FlLine(
+                                  color: Colors.grey[300]!,
+                                  strokeWidth: 0.5,
+                                );
+                              },
+                            ),
+                            titlesData: FlTitlesData(
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  getTitlesWidget: (value, meta) {
+                                    switch (value.toInt()) {
+                                      case 0: return Text('Mon', style: TextStyle(color: Colors.grey, fontSize: 10));
+                                      case 1: return Text('Tue', style: TextStyle(color: Colors.grey, fontSize: 10));
+                                      case 2: return Text('Wed', style: TextStyle(color: Colors.grey, fontSize: 10));
+                                      case 3: return Text('Thu', style: TextStyle(color: Colors.grey, fontSize: 10));
+                                      case 4: return Text('Fri', style: TextStyle(color: Colors.grey, fontSize: 10));
+                                      case 5: return Text('Sat', style: TextStyle(color: Colors.grey, fontSize: 10));
+                                      case 6: return Text('Sun', style: TextStyle(color: Colors.grey, fontSize: 10));
+                                      default: return Text('');
+                                    }
+                                  },
+                                  reservedSize: 22,
+                                ),
+                              ),
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  getTitlesWidget: (value, meta) {
+                                    return Text(
+                                      value.toInt().toString(),
+                                      style: TextStyle(color: Colors.grey, fontSize: 10),
+                                    );
+                                  },
+                                  reservedSize: 28,
+                                ),
+                              ),
+                              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            ),
+                            borderData: FlBorderData(
+                              show: true,
+                              border: Border.all(color: Colors.grey[300]!, width: 0.5),
+                            ),
                             minX: 0,
                             maxX: 6,
                             minY: 0,
-                            maxY: 10,
+                            maxY: 15,
                             lineBarsData: [
                               LineChartBarData(
                                 spots: [
-                                  FlSpot(0, 4),
-                                  FlSpot(1, 2),
-                                  FlSpot(2, 6),
-                                  FlSpot(3, 5),
-                                  FlSpot(4, 7),
-                                  FlSpot(5, 3),
-                                  FlSpot(6, 4),
+                                  FlSpot(0, 5),
+                                  FlSpot(1, 7),
+                                  FlSpot(2, 10),
+                                  FlSpot(3, 8),
+                                  FlSpot(4, 12),
+                                  FlSpot(5, 9),
+                                  FlSpot(6, 6),
                                 ],
                                 isCurved: true,
                                 color: const Color(0xFF00A3FF),
                                 barWidth: 2,
-                                dotData: FlDotData(show: false),
+                                dotData: FlDotData(show: true),
+                                belowBarData: BarAreaData(
+                                  show: true,
+                                  color: const Color(0xFF00A3FF).withOpacity(0.2),
+                                ),
                               ),
                             ],
                           ),

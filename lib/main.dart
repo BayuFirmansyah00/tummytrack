@@ -16,6 +16,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/tummytime_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/notification_screen.dart';
 import 'models/baby_model.dart';
 import 'services/auth_service.dart';
 import 'services/firestore_service.dart';
@@ -62,6 +63,7 @@ class MyApp extends StatelessWidget {
           '/tummy': (context) => TummyTimeScreen(),
           '/history': (context) => HistoryScreen(),
           '/profile': (context) => ProfileScreen(),
+          '/notification': (context) => NotificationScreen(),
         },
         debugShowCheckedModeBanner: false,
       ),
