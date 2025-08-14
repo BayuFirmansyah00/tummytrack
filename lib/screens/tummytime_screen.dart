@@ -6,6 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'achievement_screen.dart';
 import 'package:provider/provider.dart';
 import '../models/baby_model.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 class TummyTimeScreen extends StatefulWidget {
   @override
@@ -26,6 +28,7 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
   int _remainingSeconds = 0; // Will be set based on age
   List<bool> _achievements = [false, false, false, false, false, false, false];
   final List<String> _achievementTexts = []; // Will be set based on age
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   @override
   void initState() {
@@ -145,6 +148,51 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
     _progressController.reset();
   }
 
+  Future<void> _scheduleNextNotification() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        print('Scheduling notification for user: ${user.uid}');
+        
+        // Gunakan DateTime biasa untuk menghindari masalah timezone
+        final now = DateTime.now();
+        final nextTime = now.add(const Duration(minutes: 30));
+        
+        // Sinkronisasi ke Firestore untuk UI NotificationScreen
+        await FirebaseFirestore.instance.collection('notifications').add({
+          'user_id': user.uid,
+          'type': 'tummy_time_reminder',
+          'message': 'Waktunya bayi Anda melaksanakan Tummy Time',
+          'timestamp': Timestamp.fromDate(nextTime),
+          'is_read': false,
+        });
+        print('Tummy time notification added to Firestore');
+
+        // Opsional: Jadwal untuk matras
+        final matrasTime = now.add(const Duration(minutes: 35));
+        await FirebaseFirestore.instance.collection('notifications').add({
+          'user_id': user.uid,
+          'type': 'mat_connection_status',
+          'message': 'Saatnya untuk Tummy Time',
+          'timestamp': Timestamp.fromDate(matrasTime),
+          'is_read': false,
+        });
+        print('Matras notification added to Firestore');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Notifikasi dijadwalkan')),
+        );
+      } else {
+        print('User not logged in, cannot schedule notification');
+      }
+    } catch (e) {
+      print('Error scheduling notification: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menjadwalkan notifikasi: $e')),
+      );
+    }
+  }
+
   Future<void> _saveTummyTimeSession() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -195,7 +243,10 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
           },
         );
       },
-    );
+    ).then((_) {
+      _saveTummyTimeSession();
+      _scheduleNextNotification();
+    });
   }
 
   String get _formattedTime {
@@ -377,6 +428,11 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
                     ),
                   );
                 }).toList(),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _scheduleNextNotification,
+                child: const Text('Test Notification'),
               ),
               const Spacer(),
             ],

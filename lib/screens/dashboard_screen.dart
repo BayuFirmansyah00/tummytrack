@@ -80,6 +80,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Future<void> _addSampleNotifications() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Silakan login terlebih dahulu')),
+      );
+      return;
+    }
+
+    final babyModel = Provider.of<BabyModel>(context, listen: false);
+    final babyName = babyModel.name ?? 'Bayi';
+
+    final notifications = [
+      {
+        'user_id': user.uid,
+        'message': 'Waktunya sesi tummy time untuk $babyName!',
+        'timestamp': Timestamp.fromDate(DateTime.now().subtract(const Duration(minutes: 30))),
+        'type': 'tummy_time_reminder',
+      },
+      {
+        'user_id': user.uid,
+        'message': 'Matras IoT telah terhubung untuk $babyName',
+        'timestamp': Timestamp.fromDate(DateTime.now()),
+        'type': 'mat_connection_status',
+      },
+    ];
+
+    final firestore = FirebaseFirestore.instance;
+    for (var notification in notifications) {
+      await firestore.collection('notifications').add(notification);
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Notifikasi sampel ditambahkan')),
+    );
+  }
+
   void _navigateTo(int index) {
     String route;
     switch (index) {

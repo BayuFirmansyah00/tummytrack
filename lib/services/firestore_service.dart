@@ -24,15 +24,18 @@ class FirestoreService {
     }
   }
 
-  Future<void> saveTummyTimeSession(Map<String, dynamic> sessionData) async {
+  Future<void> saveTummyTimeSession(String babyId, Map<String, dynamic> sessionData) async {
     try {
-      await _firestore.collection('tummy_time_sessions').add({
-        'baby_id': sessionData['baby_id'],
-        'date': sessionData['date'] ?? FieldValue.serverTimestamp(),
-        'duration': sessionData['duration'] ?? 0,
-        'achievement': sessionData['achievement'] ?? '',
-        'emotion': sessionData['emotion'] ?? '',
-      });
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null) {
+        await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('babies')
+            .doc(babyId)
+            .collection('tummy_time_sessions')
+            .add(sessionData);
+      }
     } catch (e) {
       print("Error saving tummy time session: $e");
       throw e;
