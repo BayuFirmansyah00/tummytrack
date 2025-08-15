@@ -137,9 +137,75 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }).catchError((error) {
       print('Navigation error to $route: $error');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal navigasi ke $route: $error')),
+        SnackBar(content: Text('Navigation error: $error')),
       );
     });
+  }
+
+  Stream<QuerySnapshot> _getBabySessionsStream() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      return _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('babies')
+          .limit(1)
+          .snapshots()
+          .asyncMap((babySnapshot) async {
+        if (babySnapshot.docs.isNotEmpty) {
+          final babyDoc = babySnapshot.docs.first;
+          return await babyDoc.reference.collection('tummy_time_sessions')
+              .orderBy('createdAt', descending: true)
+              .get();
+        }
+        return await _firestore.collection('empty').limit(0).get();
+      });
+    }
+    return Stream.value(_firestore.collection('empty').limit(0).get() as QuerySnapshot);
+  }
+
+  List<FlSpot> _calculateProgress(List<Map<String, dynamic>> sessions) {
+    final now = DateTime.now();
+    final Map<int, int> dailyAchievements = {};
+
+    for (var session in sessions) {
+      try {
+        DateTime sessionDate;
+        if (session['createdAt'] is Timestamp) {
+          sessionDate = (session['createdAt'] as Timestamp).toDate();
+        } else {
+          sessionDate = DateTime.tryParse(session['createdAt']?.toString() ?? '') ?? DateTime.now();
+        }
+        
+        final daysDiff = now.difference(sessionDate).inDays;
+        if (daysDiff >= 0 && daysDiff <= 6) {
+          final dayIndex = 6 - daysDiff;
+          int achievementCount = 0;
+          
+          if (session['achievements'] != null) {
+            final achievements = session['achievements'] as List?;
+            achievementCount = achievements?.where((a) => a == true).length ?? 0;
+          }
+          
+          dailyAchievements[dayIndex] = (dailyAchievements[dayIndex] ?? 0) + achievementCount;
+        }
+      } catch (e) {
+        print('Error processing session: $e');
+      }
+    }
+
+    List<FlSpot> spots = [];
+    for (int i = 0; i <= 6; i++) {
+      final value = (dailyAchievements[i] ?? 0).toDouble();
+      spots.add(FlSpot(i.toDouble(), value));
+    }
+    return spots;
+  }
+
+  double _getMaxY(List<FlSpot> spots) {
+    if (spots.isEmpty) return 10.0; // Match the original maxY
+    final maxValue = spots.map((spot) => spot.y).reduce((a, b) => a > b ? a : b);
+    return maxValue > 10 ? maxValue + 2 : 10.0; // Ensure it doesn't exceed original maxY unless necessary
   }
 
   @override
@@ -297,82 +363,98 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(height: 20),
                       Expanded(
-                        child: LineChart(
-                          LineChartData(
-                            gridData: FlGridData(
-                              show: true,
-                              drawVerticalLine: true,
-                              getDrawingHorizontalLine: (value) {
-                                return FlLine(
-                                  color: Colors.grey[300]!,
-                                  strokeWidth: 0.5,
-                                );
-                              },
-                            ),
-                            titlesData: FlTitlesData(
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (value, meta) {
-                                    switch (value.toInt()) {
-                                      case 0: return Text('Mon', style: TextStyle(color: Colors.grey, fontSize: 10));
-                                      case 1: return Text('Tue', style: TextStyle(color: Colors.grey, fontSize: 10));
-                                      case 2: return Text('Wed', style: TextStyle(color: Colors.grey, fontSize: 10));
-                                      case 3: return Text('Thu', style: TextStyle(color: Colors.grey, fontSize: 10));
-                                      case 4: return Text('Fri', style: TextStyle(color: Colors.grey, fontSize: 10));
-                                      case 5: return Text('Sat', style: TextStyle(color: Colors.grey, fontSize: 10));
-                                      case 6: return Text('Sun', style: TextStyle(color: Colors.grey, fontSize: 10));
-                                      default: return Text('');
-                                    }
-                                  },
-                                  reservedSize: 22,
-                                ),
-                              ),
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  getTitlesWidget: (value, meta) {
-                                    return Text(
-                                      value.toInt().toString(),
-                                      style: TextStyle(color: Colors.grey, fontSize: 10),
+                        child: StreamBuilder<QuerySnapshot>(
+                          stream: _getBabySessionsStream(),
+                          builder: (context, snapshot) {
+                            if (snapshot.hasError) {
+                              return const Center(child: Text('Error loading data'));
+                            }
+                            if (!snapshot.hasData) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
+                            
+                            final sessions = snapshot.data!.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+                            final spots = _calculateProgress(sessions);
+                            final maxY = _getMaxY(spots);
+
+                            return LineChart(
+                              LineChartData(
+                                gridData: FlGridData(
+                                  show: true,
+                                  drawVerticalLine: false,
+                                  horizontalInterval: 2,
+                                  getDrawingHorizontalLine: (value) {
+                                    return FlLine(
+                                      color: Colors.grey[200]!,
+                                      strokeWidth: 1,
                                     );
                                   },
-                                  reservedSize: 28,
                                 ),
-                              ),
-                              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            ),
-                            borderData: FlBorderData(
-                              show: true,
-                              border: Border.all(color: Colors.grey[300]!, width: 0.5),
-                            ),
-                            minX: 0,
-                            maxX: 6,
-                            minY: 0,
-                            maxY: 15,
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: [
-                                  FlSpot(0, 5),
-                                  FlSpot(1, 7),
-                                  FlSpot(2, 10),
-                                  FlSpot(3, 8),
-                                  FlSpot(4, 12),
-                                  FlSpot(5, 9),
-                                  FlSpot(6, 6),
-                                ],
-                                isCurved: true,
-                                color: const Color(0xFF00A3FF),
-                                barWidth: 2,
-                                dotData: FlDotData(show: true),
-                                belowBarData: BarAreaData(
+                                titlesData: FlTitlesData(
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      getTitlesWidget: (value, meta) {
+                                        final days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+                                        if (value.toInt() >= 0 && value.toInt() < days.length) {
+                                          return Text(
+                                            days[value.toInt()],
+                                            style: const TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 10,
+                                            ),
+                                          );
+                                        }
+                                        return const Text('');
+                                      },
+                                      reservedSize: 30,
+                                    ),
+                                  ),
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      getTitlesWidget: (value, meta) {
+                                        return Text(
+                                          '${value.toInt()}',
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 10,
+                                          ),
+                                        );
+                                      },
+                                      reservedSize: 30,
+                                    ),
+                                  ),
+                                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                ),
+                                borderData: FlBorderData(
                                   show: true,
-                                  color: const Color(0xFF00A3FF).withOpacity(0.2),
+                                  border: Border(
+                                    bottom: BorderSide(color: Colors.grey[300]!, width: 1),
+                                    left: BorderSide(color: Colors.grey[300]!, width: 1),
+                                  ),
                                 ),
+                                minX: 0,
+                                maxX: 6,
+                                minY: 0,
+                                maxY: maxY,
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: spots,
+                                    isCurved: true,
+                                    color: const Color(0xFF00A3FF),
+                                    barWidth: 3,
+                                    dotData: FlDotData(show: true),
+                                    belowBarData: BarAreaData(
+                                      show: true,
+                                      color: const Color(0xFF00A3FF).withOpacity(0.2),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
                       ),
                     ],
