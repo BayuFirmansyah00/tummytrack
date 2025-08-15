@@ -97,6 +97,7 @@ flutter:
     - assets/images/1tummy_active_icon.png
     - assets/images/1history_active_icon.png
     - assets/images/1profile_active_icon.png
+    - assets/images/ibu_menggendong.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

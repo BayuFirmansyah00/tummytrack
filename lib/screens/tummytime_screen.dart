@@ -48,34 +48,7 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
   void _setDurationAndAchievements(BabyModel babyModel) {
     final birthDate = babyModel.birthDate;
     if (birthDate == null) {
-      _maxDurationSeconds = 5;
-      _remainingSeconds = 5;
-      _minutes = 0;
-      _achievementTexts.clear();
-      _achievementTexts.addAll([
-        'Bayi bisa mengangkat kepala mandiri hingga setinggi 45 derajat?',
-        'Bayi bisa menggerakkan kepala dari kiri/kanan ke tengah?',
-        'Bayi bisa melihat dan menatap wajah Anda?',
-      ]);
-      _achievements = List.filled(3, false);
-      return;
-    }
-
-    final currentDate = DateTime.now();
-    final ageDays = currentDate.difference(birthDate).inDays;
-
-    if (ageDays <= 90) {
-      _maxDurationSeconds = 5;
-      _remainingSeconds = 5;
-      _minutes = 0;
-      _achievementTexts.clear();
-      _achievementTexts.addAll([
-        'Bayi bisa mengangkat kepala mandiri hingga setinggi 45 derajat?',
-        'Bayi bisa menggerakkan kepala dari kiri/kanan ke tengah?',
-        'Bayi bisa melihat dan menatap wajah Anda?',
-      ]);
-      _achievements = List.filled(3, false);
-    } else if (ageDays <= 180) {
+      // Default untuk bayi tanpa tanggal lahir (anggap 0-3 bulan)
       _maxDurationSeconds = 5;
       _remainingSeconds = 5;
       _minutes = 0;
@@ -86,9 +59,50 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
         'Bayi bisa melihat dan menatap wajah Anda?',
         'Bayi bisa mengoceh spontan atau bereaksi dengan mengoceh?',
         'Bayi membalas tersenyum ketika diajak bicara/ tersenyum?',
+        'Bayi bereaksi terkejut terhadap suara keras?',
+        'Bayi mengenal ibu dengan pengelihatan, penciuman, pendengaran, kontak?',
       ]);
-      _achievements = List.filled(5, false);
+      _achievements = List.filled(7, false);
+      return;
+    }
+
+    final currentDate = DateTime.now();
+    final ageDays = currentDate.difference(birthDate).inDays;
+
+    if (ageDays <= 90) {
+      // Usia 0-3 bulan
+      _maxDurationSeconds = 5;
+      _remainingSeconds = 5;
+      _minutes = 0;
+      _achievementTexts.clear();
+      _achievementTexts.addAll([
+        'Bayi bisa mengangkat kepala mandiri hingga setinggi 45 derajat?',
+        'Bayi bisa menggerakkan kepala dari kiri/kanan ke tengah?',
+        'Bayi bisa melihat dan menatap wajah Anda?',
+        'Bayi bisa mengoceh spontan atau bereaksi dengan mengoceh?',
+        'Bayi membalas tersenyum ketika diajak bicara/ tersenyum?',
+        'Bayi bereaksi terkejut terhadap suara keras?',
+        'Bayi mengenal ibu dengan pengelihatan, penciuman, pendengaran, kontak?',
+      ]);
+      _achievements = List.filled(7, false);
+    } else if (ageDays <= 180) {
+      // Usia 4-6 bulan
+      _maxDurationSeconds = 5;
+      _remainingSeconds = 5;
+      _minutes = 0;
+      _achievementTexts.clear();
+      _achievementTexts.addAll([
+        'Bayi bisa berbalik dari telungkup ke telentang?',
+        'Bayi bisa mengangkat kepala secara mandiri hingga tegak 90 derajat?',
+        'Bayi bisa mempertahankan posisi kepala tetap tegak dan stabil?',
+        'Bayi bisa menggenggam atau meraih mainan?',
+        'Bayi bisa mengamati tangannya sendiri?',
+        'Bayi mengeluarkan suara gembira bernada tinggi atau memekik?',
+        'Bayi tersenyum ketika melihat mainan saat bermain sendiri?',
+      ]);
+      _achievements = List.filled(7, false);
     } else {
+      // Default untuk usia lainnya
       _maxDurationSeconds = 5;
       _remainingSeconds = 5;
       _minutes = 0;
@@ -428,11 +442,6 @@ class _TummyTimeScreenState extends State<TummyTimeScreen>
                     ),
                   );
                 }).toList(),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _scheduleNextNotification,
-                child: const Text('Test Notification'),
               ),
               const Spacer(),
             ],
