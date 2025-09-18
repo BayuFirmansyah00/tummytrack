@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 
 class BabyModel with ChangeNotifier {
+  String? babyId; // Tambah babyId
   String? name;
   DateTime? birthDate;
   String? ageRange;
   String? relationship;
-  String? gender; // Tambahkan properti gender
+  String? gender;
+
+  void updateBabyId(String value) {
+    babyId = value;
+    notifyListeners();
+  }
 
   void updateName(String value) {
     name = value;
@@ -27,18 +33,19 @@ class BabyModel with ChangeNotifier {
     notifyListeners();
   }
 
-  void updateGender(String value) { // Tambahkan metode updateGender
+  void updateGender(String value) {
     gender = value;
     notifyListeners();
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'baby_id': babyId, // Tambah babyId ke JSON
       'name': name,
       'birth_date': birthDate?.toIso8601String(),
       'age_range': ageRange,
       'relationship': relationship,
-      'gender': gender, // Tambahkan gender ke JSON
+      'gender': gender,
     };
   }
 }

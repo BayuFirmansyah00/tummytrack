@@ -201,7 +201,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
                     ),
                     // Ilustrasi ibu menggendong
                     Image.asset(
-                      'assets/images/Bayitidur.png',
+                      'assets/images/ibu_menggendong.png',
                       width: 550,
                       height: 100,
                       errorBuilder: (context, error, stackTrace) {

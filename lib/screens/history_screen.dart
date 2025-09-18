@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart'; // Add this for Indonesian locale
+import 'package:intl/date_symbol_data_local.dart';
 
 class HistoryScreen extends StatefulWidget {
   @override
@@ -13,15 +13,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
   int _selectedIndex = 2;
   DateTime? _selectedDate;
   DateTime? _babyBirthDate;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    initializeDateFormatting('id_ID', null); // Initialize Indonesian locale
+    initializeDateFormatting('id_ID', null);
     _fetchBabyData();
   }
 
   Future<void> _fetchBabyData() async {
+    setState(() => _isLoading = true);
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       try {
@@ -36,14 +38,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
           setState(() {
             _babyBirthDate = DateTime.parse(babyDoc['birth_date']);
           });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Data bayi tidak ditemukan')),
+          );
         }
       } catch (e) {
-        print('Error fetching baby data: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengambil data bayi: $e')),
+        );
       }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pengguna tidak terautentikasi')),
+      );
     }
+    setState(() => _isLoading = false);
   }
 
-  Stream<QuerySnapshot> _getBabySessionsStream() {
+  Stream<QuerySnapshot<Map<String, dynamic>>> _getBabySessionsStream() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       return FirebaseFirestore.instance
@@ -51,19 +64,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
           .doc(user.uid)
           .collection('babies')
           .limit(1)
-          .snapshots()
-          .asyncMap((babySnapshot) async {
+          .get()
+          .asStream()
+          .asyncExpand((babySnapshot) {
         if (babySnapshot.docs.isNotEmpty) {
           final babyDoc = babySnapshot.docs.first;
-          print('Fetching sessions for baby: ${babyDoc.id}');
-          return await babyDoc.reference.collection('tummy_time_sessions')
-              .orderBy('createdAt', descending: true)
-              .get();
+          var query = babyDoc.reference
+              .collection('tummy_time_sessions')
+              .orderBy('date', descending: true);
+          if (_selectedDate != null) {
+            final start = Timestamp.fromDate(_selectedDate!);
+            final end = Timestamp.fromDate(_selectedDate!.add(const Duration(days: 1)));
+            query = query
+                .where('date', isGreaterThanOrEqualTo: start)
+                .where('date', isLessThan: end);
+          }
+          return query.snapshots();
         }
-        return await FirebaseFirestore.instance.collection('empty').limit(0).get();
+        return FirebaseFirestore.instance
+            .collection('empty')
+            .limit(0)
+            .snapshots();
       });
     }
-    return Stream.value(FirebaseFirestore.instance.collection('empty').limit(0).get() as QuerySnapshot);
+    return Stream.value(FirebaseFirestore.instance
+        .collection('empty')
+        .limit(0)
+        .get() as QuerySnapshot<Map<String, dynamic>>);
   }
 
   Future<void> _selectDate() async {
@@ -153,8 +180,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text('Tanggal: ${DateFormat('dd/MM/yyyy HH:mm').format(session!.date)}'),
-                  Text('Durasi: ${session.duration}'), // Display duration
+                  Text('Durasi: ${session.duration}'),
                   Text('Mood: ${session.mood}'),
+                  Text('Posisi Matras: ${sessionData['matras_buttons']?.join(', ') ?? 'Tidak ada data'}'),
                   const SizedBox(height: 16),
                   const Text('Pencapaian:', style: TextStyle(fontWeight: FontWeight.bold)),
                   if (session!.achievements.isNotEmpty)
@@ -162,34 +190,41 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       session!.achievements.length,
                       (index) {
                         final achieved = session!.achievements[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: Row(
-                          children: [
-                            Icon(
-                              achieved ? Icons.check_circle : Icons.circle_outlined,
-                              color: achieved ? Colors.green : Colors.grey,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                index < achievementTexts.length
-                                    ? achievementTexts[index]
-                                    : 'Achievement ${index + 1}',
-                                style: const TextStyle(fontSize: 12),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                          child: Row(
+                            children: [
+                              Icon(
+                                achieved ? Icons.check_circle : Icons.circle_outlined,
+                                color: achieved ? Colors.green : Colors.grey,
+                                size: 18,
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  )
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  index < achievementTexts.length
+                                      ? achievementTexts[index]
+                                      : 'Achievement ${index + 1}',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    )
                   else
                     const Text('Tidak ada data pencapaian'),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE0F7FA),
+                      foregroundColor: const Color(0xFF7DD3D8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     child: const Text('Tutup'),
                   ),
                 ],
@@ -208,6 +243,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE0F7FA),
+                      foregroundColor: const Color(0xFF7DD3D8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     child: const Text('Tutup'),
                   ),
                 ],
@@ -223,147 +265,149 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: const Text('Riwayat'),
+        backgroundColor: const Color(0xFF7DD3D8),
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => _navigateTo(0),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_today),
+            onPressed: _selectDate,
+          ),
+          if (_selectedDate != null)
+            IconButton(
+              icon: const Icon(Icons.clear),
+              onPressed: _clearDateFilter,
+            ),
+        ],
+      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.black),
-                    onPressed: () => _navigateTo(0),
-                  ),
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        'Riwayat',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_babyBirthDate == null)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 16),
+                        child: Text(
+                          'Tanggal lahir bayi belum diatur. Beberapa fitur mungkin terbatas.',
+                          style: TextStyle(color: Colors.red, fontSize: 14),
+                        ),
+                      ),
+                    GestureDetector(
+                      onTap: _selectDate,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _selectedDate == null
+                                  ? 'Pilih Tanggal'
+                                  : DateFormat('dd MMMM yyyy', 'id_ID').format(_selectedDate!),
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                            const Icon(Icons.calendar_today, color: Colors.grey),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              GestureDetector(
-                onTap: _selectDate,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _selectedDate == null
-                            ? 'Pilih Tanggal'
-                            : DateFormat('dd MMMM yyyy', 'id_ID').format(_selectedDate!),
-                        style: const TextStyle(color: Colors.grey),
+                    if (_selectedDate != null) ...[
+                      const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: _clearDateFilter,
+                        child: const Text(
+                          'Hapus Filter Tanggal',
+                          style: TextStyle(color: Colors.red, fontSize: 14),
+                        ),
                       ),
-                      const Icon(Icons.calendar_today, color: Colors.grey),
                     ],
-                  ),
-                ),
-              ),
-              if (_selectedDate != null) ...[
-                const SizedBox(height: 10),
-                GestureDetector(
-                  onTap: _clearDateFilter,
-                  child: const Text(
-                    'Hapus Filter Tanggal',
-                    style: TextStyle(color: Colors.red, fontSize: 14),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 20),
-              Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: _getBabySessionsStream(),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    }
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return const Center(child: Text('Tidak ada riwayat sesi.'));
-                    }
-                    final sessions = snapshot.data!.docs
-                        .map((doc) => doc.data() as Map<String, dynamic>)
-                        .where((session) {
-                      if (_selectedDate == null) return true;
-                      DateTime sessionDate;
-                      if (session['date'] is Timestamp) {
-                        sessionDate = (session['date'] as Timestamp).toDate().toLocal();
-                      } else {
-                        sessionDate = DateTime.parse(session['date']).toLocal();
-                      }
-                      return sessionDate.year == _selectedDate!.year &&
-                          sessionDate.month == _selectedDate!.month &&
-                          sessionDate.day == _selectedDate!.day;
-                    }).toList();
-                    if (sessions.isEmpty) {
-                      return const Center(child: Text('Tidak ada sesi pada tanggal ini.'));
-                    }
-                    return ListView.builder(
-                      itemCount: sessions.length,
-                      itemBuilder: (context, index) {
-                        final session = sessions[index];
-                        DateTime sessionDateTime;
-                        if (session['date'] is Timestamp) {
-                          sessionDateTime = (session['date'] as Timestamp).toDate();
-                        } else {
-                          sessionDateTime = DateTime.parse(session['date']);
-                        }
-                        final formattedDate = DateFormat('EEEE, dd MMMM yyyy, h.mm a', 'id').format(sessionDateTime);
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(16),
-                            leading: Image.asset(
-                              'assets/images/1tummy_active_icon.png', // Assume this asset
-                              width: 40,
-                              height: 40,
-                            ),
-                            title: const Text(
-                              'Tummy Track',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF333333),
-                              ),
-                            ),
-                            subtitle: Text(formattedDate),
-                            trailing: ElevatedButton(
-                              onPressed: () => _showSessionDetails(session),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFE0F7FA),
-                                foregroundColor: const Color(0xFF7DD3D8),
+                    const SizedBox(height: 20),
+                    Expanded(
+                      child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                        stream: _getBabySessionsStream(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          if (snapshot.hasError) {
+                            return Center(child: Text('Error: ${snapshot.error}'));
+                          }
+                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                            return const Center(child: Text('Tidak ada riwayat sesi.'));
+                          }
+                          final sessions = snapshot.data!.docs
+                              .map((doc) => doc.data())
+                              .toList();
+                          if (sessions.isEmpty) {
+                            return const Center(child: Text('Tidak ada sesi pada tanggal ini.'));
+                          }
+                          return ListView.builder(
+                            itemCount: sessions.length,
+                            itemBuilder: (context, index) {
+                              final session = sessions[index];
+                              DateTime sessionDateTime;
+                              if (session['date'] is Timestamp) {
+                                sessionDateTime = (session['date'] as Timestamp).toDate();
+                              } else {
+                                sessionDateTime = DateTime.parse(session['date']);
+                              }
+                              final formattedDate = DateFormat('EEEE, dd MMMM yyyy, h.mm a', 'id').format(sessionDateTime);
+                              return Card(
+                                margin: const EdgeInsets.symmetric(vertical: 8),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                              ),
-                              child: const Text('Detail'),
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.all(16),
+                                  leading: Image.asset(
+                                    'assets/images/tummy_active_icon.png',
+                                    width: 40,
+                                    height: 40,
+                                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.child_care, size: 40),
+                                  ),
+                                  title: const Text(
+                                    'Tummy Track',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF333333),
+                                    ),
+                                  ),
+                                  subtitle: Text(formattedDate),
+                                  trailing: ElevatedButton(
+                                    onPressed: () => _showSessionDetails(session),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFE0F7FA),
+                                      foregroundColor: const Color(0xFF7DD3D8),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: const Text('Detail'),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -395,8 +439,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               label: 'Tummy',
             ),
             BottomNavigationBarItem(
-              icon: Image.asset('assets/images/1history_active_icon.png'),
-              activeIcon: Image.asset('assets/images/1history_active_icon.png'),
+              icon: Image.asset('assets/images/history_active_icon.png'),
+              activeIcon: Image.asset('assets/images/history_active_icon.png'),
               label: 'Riwayat',
             ),
             BottomNavigationBarItem(
@@ -417,10 +461,9 @@ class TummyTimeSession {
   late String duration;
   late String mood;
   late List<bool> achievements;
-  
+
   static List<String> getAchievementTexts(DateTime? birthDate, DateTime sessionDate) {
     if (birthDate == null) {
-      // Default untuk bayi tanpa tanggal lahir (anggap 0-3 bulan)
       return [
         'Bayi bisa mengangkat kepala mandiri hingga setinggi 45 derajat?',
         'Bayi bisa menggerakkan kepala dari kiri/kanan ke tengah?',
@@ -435,7 +478,6 @@ class TummyTimeSession {
     final ageDays = sessionDate.difference(birthDate).inDays;
 
     if (ageDays <= 90) {
-      // Usia 0-3 bulan
       return [
         'Bayi bisa mengangkat kepala mandiri hingga setinggi 45 derajat?',
         'Bayi bisa menggerakkan kepala dari kiri/kanan ke tengah?',
@@ -446,7 +488,6 @@ class TummyTimeSession {
         'Bayi mengenal ibu dengan pengelihatan, penciuman, pendengaran, kontak?',
       ];
     } else if (ageDays <= 180) {
-      // Usia 4-6 bulan
       return [
         'Bayi bisa berbalik dari telungkup ke telentang?',
         'Bayi bisa mengangkat kepala secara mandiri hingga tegak 90 derajat?',
@@ -457,7 +498,6 @@ class TummyTimeSession {
         'Bayi tersenyum ketika melihat mainan saat bermain sendiri?',
       ];
     } else {
-      // Default untuk usia lainnya
       return [
         'Bayi bisa mengangkat kepala mandiri hingga setinggi 45 derajat?',
         'Bayi bisa menggerakkan kepala dari kiri/kanan ke tengah?',
@@ -465,15 +505,15 @@ class TummyTimeSession {
       ];
     }
   }
-  
+
   TummyTimeSession.fromJson(Map<String, dynamic> json) {
     if (json['date'] is Timestamp) {
       date = (json['date'] as Timestamp).toDate();
     } else {
       date = DateTime.parse(json['date']);
     }
-    duration = json['duration'];
-    mood = json['mood'];
-    achievements = List<bool>.from(json['achievements']);
+    duration = json['duration'] ?? '0 menit';
+    mood = json['mood'] ?? 'Normal';
+    achievements = List<bool>.from(json['achievements'] ?? []);
   }
 }
