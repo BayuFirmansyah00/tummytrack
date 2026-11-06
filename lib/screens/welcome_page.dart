@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/baby_model.dart';
 
 class WelcomePage extends StatefulWidget {
-  const WelcomePage({Key? key}) : super(key: key);
+  const WelcomePage({super.key});
 
   @override
   _WelcomePageState createState() => _WelcomePageState();
@@ -14,7 +14,7 @@ class _WelcomePageState extends State<WelcomePage> {
     final babyModel = Provider.of<BabyModel>(context, listen: false);
     if (gender.isNotEmpty) {
       babyModel.updateGender(gender);
-      print('Baby gender updated: ${babyModel.gender}'); // Logging
+      print('Baby gender updated: ${babyModel.gender}'); 
       print('Saving to Firestore: ${babyModel.toJson()}');
       Navigator.pushReplacementNamed(context, '/baby-name');
     } else {
@@ -35,7 +35,7 @@ class _WelcomePageState extends State<WelcomePage> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              Container(
+              SizedBox(
                 height: 4,
                 child: Row(
                   children: [

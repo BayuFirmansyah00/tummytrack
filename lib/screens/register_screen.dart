@@ -5,14 +5,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
 
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _nameController = TextEditingController(text: 'andin');
-  final _emailController = TextEditingController(text: 'andin123@gmail.com');
+  final _nameController = TextEditingController(text: '');
+  final _emailController = TextEditingController(text: '@gmail.com');
   final _passwordController = TextEditingController();
   bool _obscureText = true;
   bool _isEmailSent = false;

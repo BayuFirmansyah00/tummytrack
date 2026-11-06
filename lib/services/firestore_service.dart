@@ -20,7 +20,7 @@ class FirestoreService {
       }
     } catch (e) {
       print("Error saving baby data: $e");
-      throw e; // Lempar error agar bisa ditangani di UI jika diperlukan
+      rethrow; // Lempar error agar bisa ditangani di UI jika diperlukan
     }
   }
 
@@ -38,7 +38,7 @@ class FirestoreService {
       }
     } catch (e) {
       print("Error saving tummy time session: $e");
-      throw e;
+      rethrow;
     }
   }
 }

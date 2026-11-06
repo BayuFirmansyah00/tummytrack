@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/baby_model.dart';
 
 class BirthDatePage extends StatefulWidget {
-  const BirthDatePage({Key? key}) : super(key: key);
+  const BirthDatePage({super.key});
 
   @override
   _BirthDatePageState createState() => _BirthDatePageState();
@@ -14,7 +14,7 @@ class _BirthDatePageState extends State<BirthDatePage> {
 
   void _calculateAge() {
     if (selectedDate != null) {
-      final now = DateTime.now(); // Menggunakan waktu nyata
+      final now = DateTime.now(); 
       final difference = now.difference(selectedDate!);
       final totalDays = difference.inDays;
       final months = totalDays ~/ 30;
@@ -59,7 +59,7 @@ class _BirthDatePageState extends State<BirthDatePage> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              Container(
+              SizedBox(
                 height: 4,
                 child: Row(
                   children: [

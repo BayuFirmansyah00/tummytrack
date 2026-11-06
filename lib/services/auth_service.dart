@@ -11,9 +11,10 @@ class AuthService {
         email: email,
         password: password,
       );
-      return result.user;
+      print('User logged in: ${result.user?.uid}');
+      return result.user; 
     } on FirebaseAuthException {
-      rethrow; // Lempar kembali error untuk penanganan di UI
+      rethrow; 
     } catch (e) {
       print('Error saat login: $e');
       return null;

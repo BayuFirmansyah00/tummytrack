@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/baby_model.dart';
 
 class BabyNameInputScreen extends StatefulWidget {
-  const BabyNameInputScreen({Key? key}) : super(key: key);
+  const BabyNameInputScreen({super.key});
 
   @override
   _BabyNameInputScreenState createState() => _BabyNameInputScreenState();
@@ -43,7 +43,7 @@ class _BabyNameInputScreenState extends State<BabyNameInputScreen> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              Container(
+              SizedBox(
                 height: 4,
                 child: Row(
                   children: [

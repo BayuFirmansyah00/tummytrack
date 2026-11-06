@@ -1,6 +1,6 @@
 {
-    "name": "myapp",
-    "short_name": "myapp",
+    "name": "tummy_track",
+    "short_name": "tummy_track",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

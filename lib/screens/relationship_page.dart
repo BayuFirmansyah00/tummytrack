@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/baby_model.dart';
 
 class RelationshipPage extends StatefulWidget {
+  const RelationshipPage({super.key});
+
   @override
   _RelationshipPageState createState() => _RelationshipPageState();
 }
@@ -104,7 +106,7 @@ class _RelationshipPageState extends State<RelationshipPage> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              Container(
+              SizedBox(
                 height: 4,
                 child: Row(
                   children: [
